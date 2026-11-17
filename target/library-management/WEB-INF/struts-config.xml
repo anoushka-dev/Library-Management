@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts-config PUBLIC
+        "-//Apache Software Foundation//DTD Struts Configuration 1.3//EN"
+        "http://struts.apache.org/dtds/struts-config_1_3.dtd">
+
+<struts-config>
+    <form-beans>
+        <form-bean name="loginForm" type="com.library.form.LoginForm"/>
+        <form-bean name="registerForm" type="com.library.form.RegisterForm"/>
+        <form-bean name="bookForm" type="com.library.form.BookForm"/>
+        <form-bean name="rentalForm" type="com.library.form.RentalForm"/>
+        <form-bean name="returnForm" type="com.library.form.ReturnForm"/>
+    </form-beans>
+
+    <global-forwards>
+        <forward name="login" path="/jsp/auth/login.jsp"/>
+        <forward name="register" path="/jsp/auth/register.jsp"/>
+    </global-forwards>
+
+    <action-mappings>
+        <action path="/login" type="com.library.action.LoginAction" name="loginForm" scope="request" validate="true" input="/jsp/auth/login.jsp">
+            <forward name="success" path="/member/dashboard.do" redirect="true"/>
+            <forward name="admin" path="/admin/dashboard.do" redirect="true"/>
+            <forward name="failure" path="/jsp/auth/login.jsp"/>
+        </action>
+
+        <action path="/register" type="com.library.action.RegisterAction" name="registerForm" scope="request" validate="true" input="/jsp/auth/register.jsp">
+            <forward name="success" path="/jsp/auth/login.jsp"/>
+            <forward name="failure" path="/jsp/auth/register.jsp"/>
+        </action>
+
+        <action path="/logout" type="com.library.action.LogoutAction" scope="request">
+            <forward name="success" path="/index.jsp" redirect="true"/>
+        </action>
+
+        <action path="/admin/dashboard" type="com.library.action.AdminDashboardAction" scope="request">
+            <forward name="success" path="/jsp/admin/dashboard.jsp"/>
+        </action>
+
+        <action path="/member/dashboard" type="com.library.action.MemberDashboardAction" scope="request">
+            <forward name="success" path="/jsp/member/dashboard.jsp"/>
+            <forward name="login" path="/jsp/auth/login.jsp"/>
+        </action>
+
+        <action path="/books/add" type="com.library.action.AddBookAction" name="bookForm" scope="request" validate="true" input="/jsp/admin/books/form.jsp">
+            <forward name="success" path="/books/list.do" redirect="true"/>
+            <forward name="failure" path="/jsp/admin/books/form.jsp"/>
+        </action>
+
+        <action path="/books/update" type="com.library.action.UpdateBookAction" name="bookForm" scope="request" validate="true" input="/jsp/admin/books/form.jsp">
+            <forward name="success" path="/books/list.do" redirect="true"/>
+            <forward name="failure" path="/jsp/admin/books/form.jsp"/>
+        </action>
+
+        <action path="/books/delete" type="com.library.action.DeleteBookAction" scope="request">
+            <forward name="success" path="/books/list.do" redirect="true"/>
+            <forward name="failure" path="/books/list.do" redirect="true"/>
+        </action>
+
+        <action path="/books/list" type="com.library.action.ViewBooksAction" scope="request">
+            <forward name="success" path="/jsp/admin/books/list.jsp"/>
+        </action>
+
+        <action path="/books/search" type="com.library.action.SearchBooksAction" name="bookForm" scope="request">
+            <forward name="success" path="/jsp/member/books/list.jsp"/>
+        </action>
+
+        <action path="/rentals/create" type="com.library.action.RentBookAction" name="rentalForm" scope="request" validate="true" input="/jsp/member/books/list.jsp">
+            <forward name="success" path="/rentals/list.do" redirect="true"/>
+            <forward name="login" path="/jsp/auth/login.jsp"/>
+        </action>
+
+        <action path="/rentals/list" type="com.library.action.ViewRentalsAction" scope="request">
+            <forward name="success" path="/jsp/member/rentals/history.jsp"/>
+            <forward name="login" path="/jsp/auth/login.jsp"/>
+        </action>
+
+        <action path="/returns/create" type="com.library.action.ReturnBookAction" name="returnForm" scope="request" validate="true" input="/jsp/member/rentals/return.jsp">
+            <forward name="success" path="/rentals/list.do" redirect="true"/>
+            <forward name="login" path="/jsp/auth/login.jsp"/>
+        </action>
+
+        <action path="/rentals/overdue" type="com.library.action.ViewOverdueRentalsAction" scope="request">
+            <forward name="success" path="/jsp/admin/overdue.jsp"/>
+        </action>
+    </action-mappings>
+</struts-config>
