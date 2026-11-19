@@ -26,6 +26,6 @@ public class LoginAction extends AbstractAction {
         if ("ADMIN".equalsIgnoreCase(user.getRole())) {
             return mapping.findForward("admin");
         }
-        return mapping.findForward("member");
+        return mapping.findForward("success");
     }
 }
