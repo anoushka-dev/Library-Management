@@ -18,7 +18,7 @@ public class ReturnBookAction extends AbstractAction {
         }
         ReturnForm returnForm = (ReturnForm) form;
         RentalDAO rentalDAO = new RentalDAO();
-        rentalDAO.processReturn(returnForm.getRentalId(), returnForm.getQuantity());
+        rentalDAO.processReturn(returnForm.getRentalId(), currentUser.getUserId(), returnForm.getQuantity());
         request.setAttribute("successMessage", "Books returned successfully");
         return mapping.findForward("success");
     }

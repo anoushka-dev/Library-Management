@@ -143,13 +143,14 @@ public class RentalDAO {
         return null;
     }
 
-    public void processReturn(int rentalId, int quantity) throws SQLException {
+    public void processReturn(int rentalId, int userId, int quantity) throws SQLException {
         try (Connection conn = DatabaseUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                String rentalSql = "SELECT * FROM rentals WHERE rental_id = ? FOR UPDATE";
+                String rentalSql = "SELECT * FROM rentals WHERE rental_id = ? AND user_id = ? FOR UPDATE";
                 try (PreparedStatement rentalStmt = conn.prepareStatement(rentalSql)) {
                     rentalStmt.setInt(1, rentalId);
+                    rentalStmt.setInt(2, userId);
                     try (ResultSet rs = rentalStmt.executeQuery()) {
                         if (!rs.next()) {
                             throw new SQLException("Rental not found.");

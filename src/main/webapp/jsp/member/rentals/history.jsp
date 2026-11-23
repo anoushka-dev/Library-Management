@@ -19,6 +19,7 @@
                     <th>Returned</th>
                     <th>Due Date</th>
                     <th>Status</th>
+                    <th>Return</th>
                 </tr>
             </thead>
             <tbody>
@@ -30,6 +31,15 @@
                         <td>${rental.returnedQuantity}</td>
                         <td>${rental.dueDate}</td>
                         <td>${rental.status}</td>
+                        <td>
+                            <c:if test="${rental.status == 'ACTIVE' or rental.status == 'PARTIALLY_RETURNED' or rental.status == 'OVERDUE'}">
+                                <form action="${pageContext.request.contextPath}/returns/create.do" method="post">
+                                    <input type="hidden" name="rentalId" value="${rental.rentalId}" />
+                                    <input type="number" name="quantity" min="1" max="${rental.rentalQuantity - rental.returnedQuantity}" value="${rental.rentalQuantity - rental.returnedQuantity}" required="required" />
+                                    <button type="submit" class="btn primary">Return</button>
+                                </form>
+                            </c:if>
+                        </td>
                     </tr>
                 </c:forEach>
             </tbody>

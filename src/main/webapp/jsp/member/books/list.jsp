@@ -37,8 +37,10 @@
                         <td>
                             <form action="${pageContext.request.contextPath}/rentals/create.do" method="post">
                                 <input type="hidden" name="bookId" value="${book.bookId}" />
-                                <input type="number" name="quantity" min="1" max="${book.availableQuantity}" value="1" />
-                                <input type="number" name="rentalDays" min="1" value="7" />
+                                <label for="quantity">Quantity:</label>
+                                <input type="number" placeholder="Quantity" name="quantity" min="1" max="${book.availableQuantity}" value="1" />
+                                <label for="rentalDays">Rental Days:</label>
+                                <input type="number" placeholder="Rental Days" name="rentalDays" min="1" value="7" />
                                 <button type="submit" class="btn primary">Rent</button>
                             </form>
                         </td>
