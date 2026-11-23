@@ -10,6 +10,9 @@
     <jsp:include page="/jsp/common/header.jsp" />
     <div class="container">
         <h2>Available Books</h2>
+        <div class="card">
+            <a href="${pageContext.request.contextPath}/jsp/admin/books/form.jsp" class="btn primary">Add New Book</a>
+        </div>
         <form action="${pageContext.request.contextPath}/books/search.do" method="get">
             <input type="text" name="searchText" placeholder="Search by title, author, category or ISBN" />
             <button type="submit" class="btn primary">Search</button>

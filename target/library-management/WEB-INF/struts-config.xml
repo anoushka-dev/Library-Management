@@ -58,10 +58,11 @@
         </action>
 
         <action path="/books/list" type="com.library.action.ViewBooksAction" scope="request">
-            <forward name="success" path="/jsp/admin/books/list.jsp"/>
+            <forward name="admin" path="/jsp/admin/books/list.jsp"/>
+            <forward name="member" path="/jsp/member/books/list.jsp"/>
         </action>
 
-        <action path="/books/search" type="com.library.action.SearchBooksAction" name="bookForm" scope="request">
+        <action path="/books/search" type="com.library.action.SearchBooksAction" name="bookForm" scope="request" validate="false">
             <forward name="success" path="/jsp/member/books/list.jsp"/>
         </action>
 
