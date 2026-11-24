@@ -117,6 +117,20 @@ public class RentalDAO {
         return 0;
     }
 
+    public int countActiveRentalsByUser(int userId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM rentals WHERE user_id = ? AND returned_quantity < rental_quantity";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
     public int countOverdueRentals() throws SQLException {
         String sql = "SELECT COUNT(*) FROM rentals WHERE status IN ('ACTIVE','PARTIALLY_RETURNED') AND due_date < CURRENT_TIMESTAMP AND returned_quantity < rental_quantity";
         try (Connection conn = DatabaseUtil.getConnection();
@@ -124,6 +138,20 @@ public class RentalDAO {
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
                 return rs.getInt(1);
+            }
+        }
+        return 0;
+    }
+
+    public int countOverdueRentalsByUser(int userId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM rentals WHERE user_id = ? AND due_date < CURRENT_TIMESTAMP AND returned_quantity < rental_quantity";
+        try (Connection conn = DatabaseUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
             }
         }
         return 0;

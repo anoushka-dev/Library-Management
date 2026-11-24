@@ -90,44 +90,57 @@ The `AuthFilter` provides authentication, but it does not enforce role-level aut
 
 ### Book Management
 
-- Administrators add books through `/books/add.do`.
-- Administrators update books through `/books/update.do`.
-- `/books/list.do` provides the admin inventory list.
-- `/books/search.do` searches title, author, category, and ISBN and is used by members.
-- `/books/delete.do` prevents deletion if an active, partially returned, or overdue rental exists.
+- Administrators use `/books/list.do` to see the complete inventory, add books, and delete eligible books.
+- Administrators add books through `/books/add.do` and update them through `/books/update.do`.
+- Members use `/books/list.do` to browse available books. The same page provides search, add, and rent controls for the current UI.
+- `/books/search.do` searches title, author, category, and ISBN. An empty or blank search shows all available books.
+- `/books/delete.do` prevents deletion if active, partially returned, or overdue rental quantities exist.
 
-When a book is created, `available_quantity` starts at `total_quantity` and `rented_quantity` starts at zero. Updating a book recalculates available quantity as `newTotal - rentedQuantity`.
+The `ViewBooksAction` reads `currentUser.role` to select the page returned by `/books/list.do`: `ADMIN` receives the inventory JSP, while `MEMBER` receives the available-books JSP. This behavior keeps each navigation role focused without changing the common Books route.
+
+When a book is created, `available_quantity` starts at `total_quantity` and `rented_quantity` starts at zero. Update validation requires the title, author, ISBN, and total quantity. The application preserves existing rented quantity while recalculating the available quantity from the updated total and rented quantity.
 
 ### Rental
 
-`RentBookAction` creates a rental for the current session user.
+`RentBookAction` creates a rental for the current session user. Each available-book row displays two number inputs:
+
+- **Quantity**: number of copies to rent. Its browser minimum is 1 and its maximum is the book's current `available_quantity`.
+- **Rental Days**: loan duration in calendar days. Its browser minimum is 1. The DAO adds this value to the current timestamp to calculate `due_date`.
 
 The rental DAO:
 
 1. Opens a JDBC transaction.
 2. Locks the book row with `SELECT ... FOR UPDATE`.
-3. Checks whether enough copies are available.
-4. Decreases `available_quantity` and increases `rented_quantity`.
-5. Inserts a rental with the selected quantity and due date.
+3. Rejects missing books and requests larger than the available stock.
+4. Decreases `available_quantity` and increases `rented_quantity` by the requested quantity.
+5. Inserts a rental for the signed-in user with `rental_quantity`, `returned_quantity = 0`, and status `ACTIVE`.
 6. Commits both changes together, or rolls back on failure.
 
-Rental days are supplied by the member form. The rental begins in `ACTIVE` status.
+The rental form validates that book ID, quantity, and rental days are all greater than zero. The DAO also enforces stock availability at transaction time, preventing overselling when stock changes concurrently.
 
-### Return
+### Rental History and Returns
 
-`ReturnBookAction` processes a return for a rental ID and quantity.
+The member Rental History page lists rental ID, book title, rented quantity, returned quantity, due date, status, and a return action when copies remain outstanding.
 
-The return DAO:
+The return form is shown for `ACTIVE`, `PARTIALLY_RETURNED`, and `OVERDUE` rentals. It provides:
 
-1. Locks the rental row.
-2. Calculates outstanding quantity.
-3. Rejects zero quantities or quantities above the outstanding amount.
-4. Updates the rental status to `RETURNED` or `PARTIALLY_RETURNED`.
-5. Updates available and rented book quantities.
-6. Inserts a row in `returns`.
-7. Commits atomically or rolls back the operation.
+- a hidden `rentalId`;
+- a quantity input whose minimum is 1 and maximum is `rental_quantity - returned_quantity`;
+- a Return button.
 
-The existing JSP flow does not expose a dedicated return form link in rental history. It depends on the `/returns/create.do` route and the `rentalId`/`quantity` form values.
+After one or more copies are returned, the page automatically recalculates and limits the next quantity to the remaining outstanding copies.
+
+`ReturnBookAction` processes `POST /returns/create.do` for the current session user:
+
+1. Locks the rental row only when `rental_id` and `user_id` match the signed-in member.
+2. Calculates outstanding quantity as `rental_quantity - returned_quantity`.
+3. Rejects quantities at or below zero and quantities above the outstanding amount.
+4. Updates the returned quantity and sets `PARTIALLY_RETURNED` or `RETURNED`.
+5. Increases `available_quantity` and decreases `rented_quantity` by the returned quantity.
+6. Inserts an immutable return event in `returns`.
+7. Commits atomically or rolls back the entire operation.
+
+Ownership matching prevents a member from returning another member's rental by modifying the hidden rental ID. When all copies are returned, the page removes the active return form because the rental status becomes `RETURNED`.
 
 ### Overdue Rentals
 
@@ -176,8 +189,8 @@ Foreign keys use `ON DELETE RESTRICT`, so users or books referenced by rental ro
 | `/books/add.do` | `AddBookAction` | Create book |
 | `/books/update.do` | `UpdateBookAction` | Update book |
 | `/books/delete.do` | `DeleteBookAction` | Delete book when eligible |
-| `/books/list.do` | `ViewBooksAction` | Admin book inventory |
-| `/books/search.do` | `SearchBooksAction` | Available-book search |
+| `/books/list.do` | `ViewBooksAction` | Admin inventory or member available-book browse |
+| `/books/search.do` | `SearchBooksAction` | Available-book search by title, author, category, or ISBN |
 | `/rentals/create.do` | `RentBookAction` | Create rental transaction |
 | `/rentals/list.do` | `ViewRentalsAction` | Member history or all rentals for admin |
 | `/returns/create.do` | `ReturnBookAction` | Process partial/full return |
@@ -243,11 +256,11 @@ Both seeded users contain BCrypt password hashes, but the plain-text passwords a
 
 ## 13. Implementation Notes and Limitations
 
-- No automated test suite is currently included.
-- Admin routes need explicit role checks in actions.
+- No automated test suite is currently included. Build and HTTP integration checks should be added for authentication, role routing, search, rental, return, and inventory updates.
+- Admin routes need explicit role checks in actions; authentication alone does not prevent an authenticated member from calling an admin action directly.
 - The member dashboard's overdue count is global, not member-specific.
 - Overdue status is derived by date in queries; stored `OVERDUE` status is not maintained by a scheduled update.
-- Return remarks are fixed to `Returned by member.` and the remarks form is not persisted.
+- Return remarks are fixed to `Returned by member.` and a remarks form is not exposed in the UI.
 - Form validation is basic and does not cover every numeric or business constraint.
 - Exception handling is mostly request/action-level; production needs consistent user-facing error handling and logging.
 - Database credentials are environment-based, but no Docker service is currently provided for the Java application itself.

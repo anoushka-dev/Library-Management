@@ -110,3 +110,25 @@ form input, form select, form textarea {
     border-radius: 8px;
     margin-bottom: 12px;
 }
+
+.return-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.return-complete {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.return-partial {
+    color: #92400e;
+    background: #fef3c7;
+}

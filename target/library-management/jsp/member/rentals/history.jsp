@@ -32,13 +32,19 @@
                         <td>${rental.dueDate}</td>
                         <td>${rental.status}</td>
                         <td>
-                            <c:if test="${rental.status == 'ACTIVE' or rental.status == 'PARTIALLY_RETURNED' or rental.status == 'OVERDUE'}">
+                            <c:choose>
+                                <c:when test="${rental.returnedQuantity >= rental.rentalQuantity}">
+                                    <span class="return-icon return-complete" title="All copies returned" aria-label="All copies returned">&#10004;</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="return-icon return-partial" title="Not all copies returned" aria-label="Not all copies returned">&#10068;</span>
                                 <form action="${pageContext.request.contextPath}/returns/create.do" method="post">
                                     <input type="hidden" name="rentalId" value="${rental.rentalId}" />
                                     <input type="number" name="quantity" min="1" max="${rental.rentalQuantity - rental.returnedQuantity}" value="${rental.rentalQuantity - rental.returnedQuantity}" required="required" />
                                     <button type="submit" class="btn primary">Return</button>
                                 </form>
-                            </c:if>
+                                </c:otherwise>
+                            </c:choose>
                         </td>
                     </tr>
                 </c:forEach>
