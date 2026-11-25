@@ -71,7 +71,7 @@ The Struts form beans are request-scoped and perform basic field validation thro
 - `LoginAction` redirects `ADMIN` users to `/admin/dashboard.do` and members to `/member/dashboard.do`.
 - Registration always creates a `MEMBER` account.
 
-The `AuthFilter` provides authentication, but it does not enforce role-level authorization on admin routes. Several admin-specific JSPs and actions are therefore reachable by any authenticated session. Admin actions should explicitly verify `currentUser.role == ADMIN` before being exposed in production.
+The `AuthFilter` requires an authenticated `User` session and restricts admin JSPs, admin dashboard routes, inventory mutations, and overdue reports to `ADMIN`. Admin dashboard and overdue actions also verify the role. Member rental queries are scoped to the signed-in user's ID.
 
 ## 6. Core Workflows
 
@@ -105,7 +105,7 @@ When a book is created, `available_quantity` starts at `total_quantity` and `ren
 `RentBookAction` creates a rental for the current session user. Each available-book row displays two number inputs:
 
 - **Quantity**: number of copies to rent. Its browser minimum is 1 and its maximum is the book's current `available_quantity`.
-- **Rental Days**: loan duration in calendar days. Its browser minimum is 1. The DAO adds this value to the current timestamp to calculate `due_date`.
+- **Rental Days**: loan duration in calendar days, defaulting to 14. The DAO adds this value to the rental timestamp to calculate `due_date`.
 
 The rental DAO:
 
@@ -113,14 +113,15 @@ The rental DAO:
 2. Locks the book row with `SELECT ... FOR UPDATE`.
 3. Rejects missing books and requests larger than the available stock.
 4. Decreases `available_quantity` and increases `rented_quantity` by the requested quantity.
-5. Inserts a rental for the signed-in user with `rental_quantity`, `returned_quantity = 0`, and status `ACTIVE`.
-6. Commits both changes together, or rolls back on failure.
+5. Inserts a rental for the signed-in user with `rental_quantity`, `returned_quantity = 0`, status `ACTIVE`, and a 14-day default due date.
+6. Queues a unique rental-confirmation email in the same database transaction.
+7. Commits both changes together, or rolls back on failure.
 
-The rental form validates that book ID, quantity, and rental days are all greater than zero. The DAO also enforces stock availability at transaction time, preventing overselling when stock changes concurrently.
+The rental form validates that book ID and quantity are positive. A missing or zero duration uses the 14-day default. The DAO also enforces stock availability at transaction time, preventing overselling when stock changes concurrently.
 
 ### Rental History and Returns
 
-The member Rental History page lists rental ID, book title, rented quantity, returned quantity, due date, status, and a return action when copies remain outstanding.
+The Rental History page lists the signed-in member's records, or all user records for administrators, including user name and email, rental and due dates, countdown, overdue days, current/final fine, and status. A return action appears for members when copies remain outstanding.
 
 The return form is shown for `ACTIVE`, `PARTIALLY_RETURNED`, and `OVERDUE` rentals. It provides:
 
@@ -128,7 +129,7 @@ The return form is shown for `ACTIVE`, `PARTIALLY_RETURNED`, and `OVERDUE` renta
 - a quantity input whose minimum is 1 and maximum is `rental_quantity - returned_quantity`;
 - a Return button.
 
-After one or more copies are returned, the page automatically recalculates and limits the next quantity to the remaining outstanding copies.
+After one or more copies are returned, the page automatically recalculates and limits the next quantity to the remaining outstanding copies. A complete return stores the final fine, calculated at ₹10 per overdue calendar day; open rentals display a backend-calculated daily fine.
 
 `ReturnBookAction` processes `POST /returns/create.do` for the current session user:
 
@@ -137,14 +138,16 @@ After one or more copies are returned, the page automatically recalculates and l
 3. Rejects quantities at or below zero and quantities above the outstanding amount.
 4. Updates the returned quantity and sets `PARTIALLY_RETURNED` or `RETURNED`.
 5. Increases `available_quantity` and decreases `rented_quantity` by the returned quantity.
-6. Inserts an immutable return event in `returns`.
+6. Inserts an immutable return event in `returns` and queues a unique return-confirmation email.
 7. Commits atomically or rolls back the entire operation.
 
 Ownership matching prevents a member from returning another member's rental by modifying the hidden rental ID. When all copies are returned, the page removes the active return form because the rental status becomes `RETURNED`.
 
-### Overdue Rentals
+### Overdue Rentals and Notifications
 
-An overdue result is selected from active or partially returned rentals whose due date is before the current database timestamp. The result set is labeled `OVERDUE` by the DAO without updating the stored status in the database. The enum can hold `OVERDUE`, but the regular overdue query does not run an update to persist that status.
+Rentals become `OVERDUE` when their due calendar date has passed and outstanding copies remain. Backend queries calculate remaining days, overdue days, and fines; active fines update daily at ₹10 per overdue day, while `fine_amount` stores the final amount when all copies are returned. The member dashboard shows only that member's active rentals and fines. Admin rental pages include all members' names and email addresses, and admin-only overdue pages show current overdue days and fines.
+
+A scheduled servlet listener queues email events for rental confirmation, two-day and due-date reminders, the first overdue day, subsequent daily overdue reminders, and every return event. The `rental_notifications.event_key` unique constraint makes event enqueueing idempotent. SMTP delivery uses an outbox status and retries failed sends.
 
 ## 7. Database Model
 
@@ -170,6 +173,8 @@ Status values:
 - `PARTIALLY_RETURNED`
 - `RETURNED`
 - `OVERDUE`
+
+`fine_amount` stores the final fine once all copies are returned. The `rental_notifications` outbox stores notification type, unique event key, delivery status, retry count, and send errors. Apply `database/migrations/001_rental_fines_notifications.sql` once to an existing installation; the main schema includes the new fields and table for fresh installs.
 
 ### `returns`
 
@@ -205,9 +210,10 @@ The admin dashboard combines:
 - sum of rented copies;
 - member count;
 - active rental row count;
-- overdue rental row count.
+- overdue rental row count;
+- total copies returned and outstanding fines.
 
-The member dashboard uses available-copy total and the member's rental count. Its current overdue value uses the global overdue query rather than filtering overdue rentals for the current member.
+The member account page shows the signed-in user's name, email, phone, and address, plus available-copy total, active and overdue rental counts, outstanding fines, and current rentals with rental date, due date, countdown, and fine. Rental history includes prior returns and final fines. The admin dashboard includes an overdue-rentals table.
 
 ## 10. Configuration
 
@@ -224,6 +230,8 @@ If no `DB_URL` is supplied, the default is:
 ```text
 jdbc:mysql://localhost:3306/library_management_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
 ```
+
+Rental emails require SMTP environment variables on Tomcat: `MAIL_SMTP_HOST` and optionally `MAIL_SMTP_PORT` (default `587`), `MAIL_SMTP_USERNAME`, `MAIL_SMTP_PASSWORD`, `MAIL_FROM`, and `MAIL_SMTP_STARTTLS` (default `true`). Without a host, email events remain queued until SMTP is configured.
 
 The default user is `root`. `DB_PASSWORD` has no default and must be configured.
 
@@ -257,9 +265,7 @@ Both seeded users contain BCrypt password hashes, but the plain-text passwords a
 ## 13. Implementation Notes and Limitations
 
 - No automated test suite is currently included. Build and HTTP integration checks should be added for authentication, role routing, search, rental, return, and inventory updates.
-- Admin routes need explicit role checks in actions; authentication alone does not prevent an authenticated member from calling an admin action directly.
-- The member dashboard's overdue count is global, not member-specific.
-- Overdue status is derived by date in queries; stored `OVERDUE` status is not maintained by a scheduled update.
+- The authentication filter restricts admin pages and mutation/report routes to administrator sessions; admin dashboard and overdue-report actions also check the role. Member rental queries are scoped to the signed-in user.
 - Return remarks are fixed to `Returned by member.` and a remarks form is not exposed in the UI.
 - Form validation is basic and does not cover every numeric or business constraint.
 - Exception handling is mostly request/action-level; production needs consistent user-facing error handling and logging.

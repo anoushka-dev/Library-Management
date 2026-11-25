@@ -1,5 +1,6 @@
 package com.library.model;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class Rental {
@@ -15,8 +16,13 @@ public class Rental {
     private Date createdAt;
     private Date updatedAt;
     private String userName;
+    private String userEmail;
     private String bookTitle;
     private String isbn;
+    private int daysRemaining;
+    private int overdueDays;
+    private BigDecimal currentFine = BigDecimal.ZERO;
+    private BigDecimal fineAmount = BigDecimal.ZERO;
 
     public int getRentalId() {
         return rentalId;
@@ -114,6 +120,14 @@ public class Rental {
         this.userName = userName;
     }
 
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
     public String getBookTitle() {
         return bookTitle;
     }
@@ -128,5 +142,37 @@ public class Rental {
 
     public void setIsbn(String isbn) {
         this.isbn = isbn;
+    }
+
+    public int getDaysRemaining() {
+        return daysRemaining;
+    }
+
+    public void setDaysRemaining(int daysRemaining) {
+        this.daysRemaining = daysRemaining;
+    }
+
+    public int getOverdueDays() {
+        return overdueDays;
+    }
+
+    public void setOverdueDays(int overdueDays) {
+        this.overdueDays = overdueDays;
+    }
+
+    public BigDecimal getCurrentFine() {
+        return currentFine;
+    }
+
+    public void setCurrentFine(BigDecimal currentFine) {
+        this.currentFine = currentFine;
+    }
+
+    public BigDecimal getFineAmount() {
+        return fineAmount;
+    }
+
+    public void setFineAmount(BigDecimal fineAmount) {
+        this.fineAmount = fineAmount;
     }
 }

@@ -23,7 +23,9 @@ public class MemberDashboardAction extends AbstractAction {
         stats.setAvailableBooks(bookDAO.countAvailableBooks());
         stats.setActiveRentals(rentalDAO.countActiveRentalsByUser(currentUser.getUserId()));
         stats.setOverdueRentals(rentalDAO.countOverdueRentalsByUser(currentUser.getUserId()));
+        stats.setOutstandingFines(rentalDAO.outstandingFinesByUser(currentUser.getUserId()));
         request.setAttribute("stats", stats);
+        request.setAttribute("activeRentals", rentalDAO.listActiveRentalsByUser(currentUser.getUserId()));
         return mapping.findForward("success");
     }
 }

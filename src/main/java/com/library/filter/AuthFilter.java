@@ -1,5 +1,6 @@
 package com.library.filter;
 
+import com.library.model.User;
 import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -33,12 +34,25 @@ public class AuthFilter implements Filter {
         }
 
         HttpSession session = httpRequest.getSession(false);
-        if (session == null || session.getAttribute("currentUser") == null) {
+        Object sessionUser = session == null ? null : session.getAttribute("currentUser");
+        if (!(sessionUser instanceof User)) {
             httpResponse.sendRedirect(httpRequest.getContextPath() + "/index.jsp");
             return;
         }
 
+        User currentUser = (User) sessionUser;
+        if (isAdminOnlyPath(path) && !"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            httpResponse.sendRedirect(httpRequest.getContextPath() + "/member/dashboard.do");
+            return;
+        }
+
         chain.doFilter(request, response);
+    }
+
+    private boolean isAdminOnlyPath(String path) {
+        return path.startsWith("/admin/") || path.startsWith("/jsp/admin/") ||
+                "/books/add.do".equals(path) || "/books/update.do".equals(path) ||
+                "/books/delete.do".equals(path) || "/rentals/overdue.do".equals(path);
     }
 
     @Override

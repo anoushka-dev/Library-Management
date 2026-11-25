@@ -17,12 +17,48 @@
             <div class="stat-box"><h3>Total Members</h3><h2>${stats.totalMembers}</h2></div>
             <div class="stat-box"><h3>Active Rentals</h3><h2>${stats.activeRentals}</h2></div>
             <div class="stat-box"><h3>Overdue Rentals</h3><h2>${stats.overdueRentals}</h2></div>
+            <div class="stat-box"><h3>Total Returned Books</h3><h2>${stats.returnedBooks}</h2></div>
+            <div class="stat-box"><h3>Outstanding Fines</h3><h2>₹${stats.outstandingFines}</h2></div>
         </div>
         <div class="card">
             <a href="${pageContext.request.contextPath}/jsp/admin/books/form.jsp" class="btn primary">Add Book</a>
             <a href="${pageContext.request.contextPath}/books/list.do" class="btn secondary">Book Inventory</a>
             <a href="${pageContext.request.contextPath}/rentals/list.do" class="btn secondary">All Rentals</a>
             <a href="${pageContext.request.contextPath}/rentals/overdue.do" class="btn secondary">Overdue Rentals</a>
+        </div>
+        <div class="card">
+            <h3>Overdue Rentals</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Book</th>
+                        <th>Rental Date</th>
+                        <th>Due Date</th>
+                        <th>Overdue Days</th>
+                        <th>Current Fine</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="rental" items="${overdueRentals}">
+                        <tr>
+                            <td>${rental.userName}</td>
+                            <td>${rental.userEmail}</td>
+                            <td>${rental.bookTitle}</td>
+                            <td>${rental.rentalDate}</td>
+                            <td>${rental.dueDate}</td>
+                            <td>${rental.overdueDays}</td>
+                            <td>₹${rental.currentFine}</td>
+                            <td>${rental.status}</td>
+                        </tr>
+                    </c:forEach>
+                    <c:if test="${empty overdueRentals}">
+                        <tr><td colspan="8">No overdue rentals.</td></tr>
+                    </c:if>
+                </tbody>
+            </table>
         </div>
     </div>
     <jsp:include page="/jsp/common/footer.jsp" />

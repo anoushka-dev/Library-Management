@@ -40,7 +40,7 @@
                                 <label for="quantity">Number of books:</label>
                                 <input type="number" placeholder="Number of books" name="quantity" min="1" max="${book.availableQuantity}" required="required" />
                                 <label for="rentalDays">Number of days:</label>
-                                <input type="number" placeholder="Number of days" name="rentalDays" min="1" required="required" />
+                                <input type="number" placeholder="Number of days" name="rentalDays" min="1" value="14" required="required" />
                                 <button type="submit" class="btn primary">Rent</button>
                             </form>
                         </td>

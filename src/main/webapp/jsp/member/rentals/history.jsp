@@ -14,24 +14,41 @@
             <thead>
                 <tr>
                     <th>Rental ID</th>
+                    <c:if test="${sessionScope.currentUser.role == 'ADMIN'}"><th>User</th><th>Email</th></c:if>
                     <th>Book</th>
                     <th>Quantity</th>
                     <th>Returned</th>
+                    <th>Rental Date</th>
                     <th>Due Date</th>
+                    <th>Time Remaining / Overdue</th>
+                    <th>Current Fine</th>
+                    <th>Final Fine</th>
                     <th>Status</th>
-                    <th>Return</th>
+                    <c:if test="${sessionScope.currentUser.role != 'ADMIN'}"><th>Return</th></c:if>
                 </tr>
             </thead>
             <tbody>
                 <c:forEach var="rental" items="${rentals}">
                     <tr>
                         <td>${rental.rentalId}</td>
+                        <c:if test="${sessionScope.currentUser.role == 'ADMIN'}"><td>${rental.userName}</td><td>${rental.userEmail}</td></c:if>
                         <td>${rental.bookTitle}</td>
                         <td>${rental.rentalQuantity}</td>
                         <td>${rental.returnedQuantity}</td>
+                        <td>${rental.rentalDate}</td>
                         <td>${rental.dueDate}</td>
-                        <td>${rental.status}</td>
                         <td>
+                            <c:choose>
+                                <c:when test="${rental.status == 'OVERDUE'}">${rental.overdueDays} days overdue</c:when>
+                                <c:when test="${rental.returnedQuantity >= rental.rentalQuantity}">Returned</c:when>
+                                <c:when test="${rental.daysRemaining == 0}">Due today</c:when>
+                                <c:otherwise>${rental.daysRemaining} days remaining</c:otherwise>
+                            </c:choose>
+                        </td>
+                        <td>₹${rental.currentFine}</td>
+                        <td>₹${rental.fineAmount}</td>
+                        <td>${rental.status}</td>
+                        <c:if test="${sessionScope.currentUser.role != 'ADMIN'}"><td>
                             <c:choose>
                                 <c:when test="${rental.returnedQuantity >= rental.rentalQuantity}">
                                     <span class="return-icon return-complete" title="All copies returned" aria-label="All copies returned">&#10004;</span>
@@ -45,9 +62,12 @@
                                 </form>
                                 </c:otherwise>
                             </c:choose>
-                        </td>
+                        </td></c:if>
                     </tr>
                 </c:forEach>
+                <c:if test="${empty rentals}">
+                    <tr><td colspan="${sessionScope.currentUser.role == 'ADMIN' ? 12 : 11}">No rental records found.</td></tr>
+                </c:if>
             </tbody>
         </table>
     </div>

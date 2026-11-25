@@ -6,6 +6,10 @@
 
     <display-name>Library Management System</display-name>
 
+    <listener>
+        <listener-class>com.library.util.RentalNotificationListener</listener-class>
+    </listener>
+
     <filter>
         <filter-name>authFilter</filter-name>
         <filter-class>com.library.filter.AuthFilter</filter-class>

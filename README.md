@@ -9,6 +9,8 @@ A server-rendered Java 8 library application for managing books, inventory, memb
 - Book catalog with searchable inventory
 - Add, update, and delete book operations
 - Book rental with stock locking and database transactions
+- Per-member rental history, due-date countdowns, and ₹10/day overdue fines
+- Rental confirmation, due-date, overdue, and return email notifications
 - Partial and full return processing
 - Active, partially returned, returned, and overdue rental states
 - Admin dashboard and overdue rental report
@@ -92,6 +94,25 @@ export DB_URL='jdbc:mysql://localhost:3306/library_management_system?useSSL=fals
 
 Without `DB_URL`, the application uses `localhost:3306/library_management_system`. Without `DB_USER`, it uses `root`. The database password is required and has no default.
 
+Configure SMTP on the Tomcat process to deliver rental notifications:
+
+```bash
+export MAIL_SMTP_HOST='smtp.example.com'
+export MAIL_SMTP_PORT='587'
+export MAIL_SMTP_USERNAME='library@example.com'
+export MAIL_SMTP_PASSWORD='change-me'
+export MAIL_FROM='library@example.com'
+export MAIL_SMTP_STARTTLS='true'
+```
+
+SMTP username/password are optional for servers that do not require authentication. If `MAIL_SMTP_HOST` is not set, notifications remain queued in MySQL until SMTP is configured. The application retries failed deliveries; each event is recorded with a unique key to prevent routine duplicate sends.
+
+For an existing database, apply the additive migration once (do not rerun the fresh-install script, which recreates its tables):
+
+```bash
+mysql -u root -p library_management_system < database/migrations/001_rental_fines_notifications.sql
+```
+
 ## Build and Deploy
 
 ```bash
@@ -119,6 +140,18 @@ http://localhost:8080/library-management/
 
 Make sure `DB_PASSWORD`, `DB_URL`, and `DB_USER` are present in the Tomcat process environment. For a Tomcat process in Docker, use the MySQL container hostname instead of `localhost`.
 
+## Administrator Access
+
+Open the site, choose **Login**, and sign in with an account whose database role is `ADMIN`. Successful admin login opens `/admin/dashboard.do`; the admin navigation provides inventory, all rentals, and overdue rentals.
+
+The fresh-install SQL seeds `admin@library.local`, but does not provide its plain-text password. Do not assume a default password. To create an account with a password you know, register it through the site, then promote that account using a database administrator connection:
+
+```sql
+UPDATE users SET role = 'ADMIN' WHERE email = 'your-admin-email@example.com';
+```
+
+Only promote a trusted account. Then sign in with its registered email and password. Admin dashboards, admin JSPs, inventory mutations, and overdue reports are restricted to `ADMIN` sessions.
+
 ## Main Routes
 
 | Route | Purpose |
@@ -127,11 +160,11 @@ Make sure `DB_PASSWORD`, `DB_URL`, and `DB_USER` are present in the Tomcat proce
 | `/register.do` | Register a member account |
 | `/logout.do` | End the session |
 | `/admin/dashboard.do` | Admin statistics |
-| `/member/dashboard.do` | Member statistics |
+| `/member/dashboard.do` | Member account details, rental summary, and current rentals |
 | `/books/list.do` | Admin inventory |
 | `/books/search.do` | Member search |
 | `/rentals/create.do` | Create a rental |
-| `/rentals/list.do` | User rentals or all rentals for admin |
+| `/rentals/list.do` | Member rental history or all rentals for admin, including due dates and fines |
 | `/returns/create.do` | Process a partial or full return |
 | `/rentals/overdue.do` | Overdue rental report |
 
@@ -151,6 +184,8 @@ Both rows contain BCrypt hashes. The source SQL does not record the correspondin
 ## Rental and Return Behavior
 
 - Renting locks the book row and atomically updates inventory plus rental state.
+- Rental duration defaults to 14 calendar days; each rental stores its due date.
+- Overdue days are counted after the due date and the backend calculates a ₹10/day fine. Open rentals accrue the current fine daily; full return stores the final amount.
 - Insufficient stock rejects the rental.
 - A full return sets status to `RETURNED`; a partial return sets `PARTIALLY_RETURNED`.
 - Returning copies atomically updates rental status, book inventory, and the `returns` table.
@@ -158,8 +193,8 @@ Both rows contain BCrypt hashes. The source SQL does not record the correspondin
 
 ## Security and Operations Notes
 
-- `AuthFilter` requires a session for protected paths, but it does not currently enforce admin role checks on every admin action.
-- Member routes and admin routes should receive explicit role checks before production use.
+- Rental history is scoped to the signed-in member; admin rental and overdue views are role-checked.
+- The member account page shows profile details, active rentals, due dates, overdue days, and current charges; rental history includes past returns and final fines.
 - The SQL and application both enforce important constraints, but form and action validation is still basic.
 - Run the application only over HTTPS in production and configure secure Tomcat session settings.
 - No automated test suite is currently included.
@@ -173,3 +208,10 @@ mvn clean package
 ```
 
 The Maven WAR build should complete and produce `target/library-management.war`. There are currently no test sources to run with `mvn test`.
+
+set -a
+source .env
+set +a
+export DB_PASSWORD="${DB_PASSWORD:-$MYSQL_ROOT_PASSWORD}"
+export DB_USER="${DB_USER:-root}"
+export DB_URL="jdbc:mysql://localhost:3306/library_management_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"

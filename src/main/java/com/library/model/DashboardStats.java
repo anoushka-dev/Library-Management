@@ -1,5 +1,7 @@
 package com.library.model;
 
+import java.math.BigDecimal;
+
 public class DashboardStats {
     private int totalBooks;
     private int availableBooks;
@@ -7,6 +9,8 @@ public class DashboardStats {
     private int totalMembers;
     private int activeRentals;
     private int overdueRentals;
+    private int returnedBooks;
+    private BigDecimal outstandingFines = BigDecimal.ZERO;
 
     public int getTotalBooks() {
         return totalBooks;
@@ -54,5 +58,21 @@ public class DashboardStats {
 
     public void setOverdueRentals(int overdueRentals) {
         this.overdueRentals = overdueRentals;
+    }
+
+    public int getReturnedBooks() {
+        return returnedBooks;
+    }
+
+    public void setReturnedBooks(int returnedBooks) {
+        this.returnedBooks = returnedBooks;
+    }
+
+    public BigDecimal getOutstandingFines() {
+        return outstandingFines;
+    }
+
+    public void setOutstandingFines(BigDecimal outstandingFines) {
+        this.outstandingFines = outstandingFines;
     }
 }

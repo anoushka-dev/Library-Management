@@ -15,6 +15,7 @@
     <global-forwards>
         <forward name="login" path="/jsp/auth/login.jsp"/>
         <forward name="register" path="/jsp/auth/register.jsp"/>
+        <forward name="notAdmin" path="/member/dashboard.do" redirect="true"/>
     </global-forwards>
 
     <action-mappings>

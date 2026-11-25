@@ -10,7 +10,7 @@ public class RentalForm extends ActionForm {
     private static final long serialVersionUID = 1L;
     private int bookId;
     private int quantity;
-    private int rentalDays;
+    private int rentalDays = 14;
 
     public int getBookId() {
         return bookId;
@@ -45,7 +45,7 @@ public class RentalForm extends ActionForm {
         if (quantity <= 0) {
             errors.add("quantity", new ActionMessage("errors.required", "Quantity"));
         }
-        if (rentalDays <= 0) {
+        if (rentalDays < 0) {
             errors.add("rentalDays", new ActionMessage("errors.required", "Rental Days"));
         }
         return errors;

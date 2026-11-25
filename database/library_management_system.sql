@@ -1,6 +1,7 @@
 CREATE DATABASE IF NOT EXISTS library_management_system;
 USE library_management_system;
 
+DROP TABLE IF EXISTS rental_notifications;
 DROP TABLE IF EXISTS returns;
 DROP TABLE IF EXISTS rentals;
 DROP TABLE IF EXISTS books;
@@ -44,6 +45,7 @@ CREATE TABLE rentals (
     rental_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     due_date TIMESTAMP NOT NULL,
     actual_return_date TIMESTAMP NULL,
+    fine_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     status ENUM('ACTIVE','PARTIALLY_RETURNED','RETURNED','OVERDUE') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -62,6 +64,24 @@ CREATE TABLE returns (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (return_id),
     FOREIGN KEY (rental_id) REFERENCES rentals(rental_id) ON DELETE RESTRICT
+);
+
+CREATE TABLE rental_notifications (
+    notification_id BIGINT NOT NULL AUTO_INCREMENT,
+    rental_id INT NOT NULL,
+    return_id INT DEFAULT NULL,
+    notification_type VARCHAR(40) NOT NULL,
+    event_key VARCHAR(160) NOT NULL UNIQUE,
+    status ENUM('PENDING','SENDING','SENT','FAILED','SKIPPED') NOT NULL DEFAULT 'PENDING',
+    attempt_count INT NOT NULL DEFAULT 0,
+    last_error VARCHAR(1000) DEFAULT NULL,
+    sent_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (notification_id),
+    FOREIGN KEY (rental_id) REFERENCES rentals(rental_id) ON DELETE RESTRICT,
+    FOREIGN KEY (return_id) REFERENCES returns(return_id) ON DELETE RESTRICT,
+    INDEX idx_rental_notifications_delivery (status, updated_at)
 );
 
 CREATE INDEX idx_users_email ON users(email);
