@@ -6,9 +6,10 @@
         <strong>Library Management</strong>
     </div>
     <div>
-        <a href="${contextPath}/member/dashboard.do">Dashboard</a>
-        <a href="${contextPath}/books/list.do">Books</a>
-        <a href="${contextPath}/rentals/list.do">Rentals</a>
+        <a href="${contextPath}/admin/dashboard.do">Admin Dashboard</a>
+        <a href="${contextPath}/books/list.do">Inventory</a>
+        <a href="${contextPath}/rentals/list.do">Rental History</a>
+        <a href="${contextPath}/rentals/overdue.do">Overdue Rentals</a>
         <a href="${contextPath}/logout.do">Logout</a>
     </div>
 </div>

@@ -13,21 +13,32 @@
         <table>
             <thead>
                 <tr>
-                    <th>Member</th>
+                    <th>Renter</th>
+                    <th>Email</th>
                     <th>Book</th>
+                    <th>Rental Date</th>
                     <th>Due Date</th>
+                    <th>Overdue Days</th>
+                    <th>Current Fine</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 <c:forEach var="rental" items="${rentals}">
                     <tr>
-                        <td>${rental.userName}</td>
+                        <td>${rental.renterName}</td>
+                        <td>${rental.renterEmail}</td>
                         <td>${rental.bookTitle}</td>
+                        <td>${rental.rentalDate}</td>
                         <td>${rental.dueDate}</td>
+                        <td>${rental.overdueDays}</td>
+                        <td>₹${rental.currentFine}</td>
                         <td>${rental.status}</td>
                     </tr>
                 </c:forEach>
+                <c:if test="${empty rentals}">
+                    <tr><td colspan="8">No overdue rentals.</td></tr>
+                </c:if>
             </tbody>
         </table>
     </div>

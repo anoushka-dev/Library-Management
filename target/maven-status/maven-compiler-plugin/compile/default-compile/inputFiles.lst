@@ -4,8 +4,7 @@
 /workspaces/Library-Management/src/main/java/com/library/action/DeleteBookAction.java
 /workspaces/Library-Management/src/main/java/com/library/action/LoginAction.java
 /workspaces/Library-Management/src/main/java/com/library/action/LogoutAction.java
-/workspaces/Library-Management/src/main/java/com/library/action/MemberDashboardAction.java
-/workspaces/Library-Management/src/main/java/com/library/action/RegisterAction.java
+/workspaces/Library-Management/src/main/java/com/library/action/NewRentalAction.java
 /workspaces/Library-Management/src/main/java/com/library/action/RentBookAction.java
 /workspaces/Library-Management/src/main/java/com/library/action/ReturnBookAction.java
 /workspaces/Library-Management/src/main/java/com/library/action/SearchBooksAction.java
@@ -19,7 +18,6 @@
 /workspaces/Library-Management/src/main/java/com/library/filter/AuthFilter.java
 /workspaces/Library-Management/src/main/java/com/library/form/BookForm.java
 /workspaces/Library-Management/src/main/java/com/library/form/LoginForm.java
-/workspaces/Library-Management/src/main/java/com/library/form/RegisterForm.java
 /workspaces/Library-Management/src/main/java/com/library/form/RentalForm.java
 /workspaces/Library-Management/src/main/java/com/library/form/ReturnForm.java
 /workspaces/Library-Management/src/main/java/com/library/model/Book.java
@@ -28,4 +26,7 @@
 /workspaces/Library-Management/src/main/java/com/library/model/ReturnRecord.java
 /workspaces/Library-Management/src/main/java/com/library/model/User.java
 /workspaces/Library-Management/src/main/java/com/library/util/DatabaseUtil.java
+/workspaces/Library-Management/src/main/java/com/library/util/GeneratePasswordHash.java
 /workspaces/Library-Management/src/main/java/com/library/util/PasswordUtil.java
+/workspaces/Library-Management/src/main/java/com/library/util/RentalNotificationListener.java
+/workspaces/Library-Management/src/main/java/com/library/util/RentalNotificationService.java
