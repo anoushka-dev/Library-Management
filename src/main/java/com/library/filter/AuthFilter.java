@@ -25,8 +25,7 @@ public class AuthFilter implements Filter {
         String path = httpRequest.getServletPath();
 
         if (path == null || path.isEmpty() || "/index.jsp".equals(path) ||
-                "/jsp/auth/login.jsp".equals(path) || "/jsp/auth/register.jsp".equals(path) ||
-                "/login.do".equals(path) || "/register.do".equals(path) ||
+                "/jsp/auth/login.jsp".equals(path) || "/login.do".equals(path) ||
                 path.startsWith("/css/") || path.startsWith("/js/") || path.startsWith("/images/") ||
                 path.startsWith("/WEB-INF/")) {
             chain.doFilter(request, response);
@@ -41,18 +40,13 @@ public class AuthFilter implements Filter {
         }
 
         User currentUser = (User) sessionUser;
-        if (isAdminOnlyPath(path) && !"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
-            httpResponse.sendRedirect(httpRequest.getContextPath() + "/member/dashboard.do");
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            session.invalidate();
+            httpResponse.sendRedirect(httpRequest.getContextPath() + "/index.jsp");
             return;
         }
 
         chain.doFilter(request, response);
-    }
-
-    private boolean isAdminOnlyPath(String path) {
-        return path.startsWith("/admin/") || path.startsWith("/jsp/admin/") ||
-                "/books/add.do".equals(path) || "/books/update.do".equals(path) ||
-                "/books/delete.do".equals(path) || "/rentals/overdue.do".equals(path);
     }
 
     @Override

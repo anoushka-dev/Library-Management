@@ -13,7 +13,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>Member</th>
+                    <th>Renter</th>
                     <th>Email</th>
                     <th>Book</th>
                     <th>Rental Date</th>
@@ -26,8 +26,8 @@
             <tbody>
                 <c:forEach var="rental" items="${rentals}">
                     <tr>
-                        <td>${rental.userName}</td>
-                        <td>${rental.userEmail}</td>
+                        <td>${rental.renterName}</td>
+                        <td>${rental.renterEmail}</td>
                         <td>${rental.bookTitle}</td>
                         <td>${rental.rentalDate}</td>
                         <td>${rental.dueDate}</td>

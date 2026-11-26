@@ -5,7 +5,6 @@ import java.util.Date;
 
 public class Rental {
     private int rentalId;
-    private int userId;
     private int bookId;
     private int rentalQuantity;
     private int returnedQuantity;
@@ -15,8 +14,10 @@ public class Rental {
     private String status;
     private Date createdAt;
     private Date updatedAt;
-    private String userName;
-    private String userEmail;
+    private String renterName;
+    private String renterEmail;
+    private String renterPhone;
+    private String renterAddress;
     private String bookTitle;
     private String isbn;
     private int daysRemaining;
@@ -30,14 +31,6 @@ public class Rental {
 
     public void setRentalId(int rentalId) {
         this.rentalId = rentalId;
-    }
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
     }
 
     public int getBookId() {
@@ -112,20 +105,36 @@ public class Rental {
         this.updatedAt = updatedAt;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getRenterName() {
+        return renterName;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setRenterName(String renterName) {
+        this.renterName = renterName;
     }
 
-    public String getUserEmail() {
-        return userEmail;
+    public String getRenterEmail() {
+        return renterEmail;
     }
 
-    public void setUserEmail(String userEmail) {
-        this.userEmail = userEmail;
+    public void setRenterEmail(String renterEmail) {
+        this.renterEmail = renterEmail;
+    }
+
+    public String getRenterPhone() {
+        return renterPhone;
+    }
+
+    public void setRenterPhone(String renterPhone) {
+        this.renterPhone = renterPhone;
+    }
+
+    public String getRenterAddress() {
+        return renterAddress;
+    }
+
+    public void setRenterAddress(String renterAddress) {
+        this.renterAddress = renterAddress;
     }
 
     public String getBookTitle() {

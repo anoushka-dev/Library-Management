@@ -6,7 +6,6 @@ public class DashboardStats {
     private int totalBooks;
     private int availableBooks;
     private int rentedBooks;
-    private int totalMembers;
     private int activeRentals;
     private int overdueRentals;
     private int returnedBooks;
@@ -34,14 +33,6 @@ public class DashboardStats {
 
     public void setRentedBooks(int rentedBooks) {
         this.rentedBooks = rentedBooks;
-    }
-
-    public int getTotalMembers() {
-        return totalMembers;
-    }
-
-    public void setTotalMembers(int totalMembers) {
-        this.totalMembers = totalMembers;
     }
 
     public int getActiveRentals() {

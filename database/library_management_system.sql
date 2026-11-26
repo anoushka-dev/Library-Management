@@ -14,7 +14,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(30) DEFAULT NULL,
     address VARCHAR(255) DEFAULT NULL,
-    role ENUM('ADMIN','MEMBER') NOT NULL,
+    role ENUM('ADMIN') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id)
 );
@@ -38,7 +38,10 @@ CREATE TABLE books (
 
 CREATE TABLE rentals (
     rental_id INT NOT NULL AUTO_INCREMENT,
-    user_id INT NOT NULL,
+    renter_name VARCHAR(120) NOT NULL,
+    renter_email VARCHAR(150) NOT NULL,
+    renter_phone VARCHAR(30) DEFAULT NULL,
+    renter_address VARCHAR(255) DEFAULT NULL,
     book_id INT NOT NULL,
     rental_quantity INT NOT NULL CHECK (rental_quantity > 0),
     returned_quantity INT NOT NULL DEFAULT 0 CHECK (returned_quantity >= 0),
@@ -50,7 +53,6 @@ CREATE TABLE rentals (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (rental_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT,
     FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE RESTRICT,
     CONSTRAINT chk_rental_returned_quantity CHECK (returned_quantity <= rental_quantity)
 );
@@ -88,14 +90,12 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_books_isbn ON books(isbn);
 CREATE INDEX idx_books_category ON books(category);
 CREATE INDEX idx_books_title ON books(title);
-CREATE INDEX idx_rentals_user ON rentals(user_id);
 CREATE INDEX idx_rentals_book ON rentals(book_id);
 CREATE INDEX idx_rentals_status ON rentals(status);
 CREATE INDEX idx_returns_rental_id ON returns(rental_id);
 
 INSERT INTO users (full_name, email, password_hash, phone, address, role) VALUES
-('System Administrator', 'admin@library.local', '$2a$10$QY2P1D0c0Q3QwJh5nGkqcuN6ldzmJ3QZZlQ4vNcM7P1CrEFlm3wV6', '9999999999', 'Head Office', 'ADMIN'),
-('Sample Member', 'member@library.local', '$2a$10$QY2P1D0c0Q3QwJh5nGkqcuN6ldzmJ3QZZlQ4vNcM7P1CrEFlm3wV6', '8888888888', 'Downtown', 'MEMBER');
+('System Administrator', 'admin@library.local', '$2a$10$QY2P1D0c0Q3QwJh5nGkqcuN6ldzmJ3QZZlQ4vNcM7P1CrEFlm3wV6', '9999999999', 'Head Office', 'ADMIN');
 
 INSERT INTO books (isbn, title, author, category, publisher, publication_year, description, total_quantity, available_quantity, rented_quantity) VALUES
 ('9780132350884', 'Clean Code', 'Robert C. Martin', 'Programming', 'Prentice Hall', 2008, 'A handbook for writing clean, maintainable code.', 10, 10, 0),

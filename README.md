@@ -1,20 +1,19 @@
 # Library Management System
 
-A server-rendered Java 8 library application for managing books, inventory, member rentals, partial/full returns, and overdue reports. It uses Apache Struts 1.2, JSP/JSTL, JDBC, MySQL 8, Maven, and Apache Tomcat.
+A server-rendered Java 8 library application where an administrator manages books and records rentals for customers. It uses Apache Struts 1.2, JSP/JSTL, JDBC, MySQL 8, Maven, and Apache Tomcat.
 
 ## Features
 
 - BCrypt password authentication and session-based login
-- Administrator and member workflows
+- Single administrator authentication; renters do not need app accounts
 - Book catalog with searchable inventory
 - Add, update, and delete book operations
-- Book rental with stock locking and database transactions
-- Per-member rental history, due-date countdowns, and ₹10/day overdue fines
+- Admin-entered renter name and contact details on each rental
+- Rental history with renter details, due-date countdowns, and ₹10/day overdue fines
 - Rental confirmation, due-date, overdue, and return email notifications
 - Partial and full return processing
 - Active, partially returned, returned, and overdue rental states
 - Admin dashboard and overdue rental report
-- Member dashboard, available-book search, and rental history
 - Docker Compose MySQL setup and seeded data
 
 ## Architecture at a Glance
@@ -107,10 +106,11 @@ export MAIL_SMTP_STARTTLS='true'
 
 SMTP username/password are optional for servers that do not require authentication. If `MAIL_SMTP_HOST` is not set, notifications remain queued in MySQL until SMTP is configured. The application retries failed deliveries; each event is recorded with a unique key to prevent routine duplicate sends.
 
-For an existing database, apply the additive migration once (do not rerun the fresh-install script, which recreates its tables):
+For an existing database, back it up first. Apply migration 001 only if it has not already been applied, then apply migration 002 to snapshot renter details and remove member accounts (do not rerun the fresh-install script, which recreates its tables):
 
 ```bash
 mysql -u root -p library_management_system < database/migrations/001_rental_fines_notifications.sql
+mysql -u root -p library_management_system < database/migrations/002_admin_only_rentals.sql
 ```
 
 ## Build and Deploy
@@ -144,28 +144,29 @@ Make sure `DB_PASSWORD`, `DB_URL`, and `DB_USER` are present in the Tomcat proce
 
 Open the site, choose **Login**, and sign in with an account whose database role is `ADMIN`. Successful admin login opens `/admin/dashboard.do`; the admin navigation provides inventory, all rentals, and overdue rentals.
 
-The fresh-install SQL seeds `admin@library.local`, but does not provide its plain-text password. Do not assume a default password. To create an account with a password you know, register it through the site, then promote that account using a database administrator connection:
+The fresh-install SQL seeds `admin@library.local`, but does not provide its plain-text password. Set a known BCrypt password hash directly for this administrator before first login. Public registration is disabled; only users with the `ADMIN` role can authenticate.
 
 ```sql
-UPDATE users SET role = 'ADMIN' WHERE email = 'your-admin-email@example.com';
+UPDATE users
+SET password_hash = '$2a$10$replace-with-a-generated-bcrypt-hash'
+WHERE email = 'admin@library.local';
 ```
 
-Only promote a trusted account. Then sign in with its registered email and password. Admin dashboards, admin JSPs, inventory mutations, and overdue reports are restricted to `ADMIN` sessions.
+Do not use the example placeholder as a real hash. After setting the hash, sign in with the administrator email and corresponding password.
 
 ## Main Routes
 
 | Route | Purpose |
 |---|---|
 | `/login.do` | Authenticate and start a session |
-| `/register.do` | Register a member account |
 | `/logout.do` | End the session |
 | `/admin/dashboard.do` | Admin statistics |
-| `/member/dashboard.do` | Member account details, rental summary, and current rentals |
 | `/books/list.do` | Admin inventory |
-| `/books/search.do` | Member search |
-| `/rentals/create.do` | Create a rental |
-| `/rentals/list.do` | Member rental history or all rentals for admin, including due dates and fines |
-| `/returns/create.do` | Process a partial or full return |
+| `/books/search.do` | Search inventory |
+| `/rentals/new.do` | Open the admin rental form |
+| `/rentals/create.do` | Record a rental with renter contact details |
+| `/rentals/list.do` | Admin rental history |
+| `/returns/create.do` | Process a partial or full return as admin |
 | `/rentals/overdue.do` | Overdue rental report |
 
 The full route map is defined in [struts-config.xml](src/main/webapp/WEB-INF/struts-config.xml).
@@ -177,9 +178,8 @@ The SQL script creates these accounts:
 | Role | Email |
 |---|---|
 | Admin | `admin@library.local` |
-| Member | `member@library.local` |
 
-Both rows contain BCrypt hashes. The source SQL does not record the corresponding plain-text passwords, so reset them through a controlled setup process before deployment.
+The row contains a BCrypt hash. The source SQL does not record the corresponding plain-text password, so reset it through a controlled setup process before deployment.
 
 ## Rental and Return Behavior
 
@@ -193,8 +193,8 @@ Both rows contain BCrypt hashes. The source SQL does not record the correspondin
 
 ## Security and Operations Notes
 
-- Rental history is scoped to the signed-in member; admin rental and overdue views are role-checked.
-- The member account page shows profile details, active rentals, due dates, overdue days, and current charges; rental history includes past returns and final fines.
+- The authentication filter requires an administrator session for all application pages and actions except login and static assets.
+- Each rental stores a snapshot of renter name, email, phone, and address so history remains available without renter accounts.
 - The SQL and application both enforce important constraints, but form and action validation is still basic.
 - Run the application only over HTTPS in production and configure secure Tomcat session settings.
 - No automated test suite is currently included.

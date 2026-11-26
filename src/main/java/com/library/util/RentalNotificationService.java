@@ -136,14 +136,14 @@ public final class RentalNotificationService {
     }
 
     private static boolean sendNotification(long notificationId, String host) throws Exception {
-        String sql = "SELECT n.notification_type, u.full_name, u.email, b.title, r.rental_date, r.due_date, "
+        String sql = "SELECT n.notification_type, r.renter_name, r.renter_email, b.title, r.rental_date, r.due_date, "
                 + "r.returned_quantity, r.rental_quantity, COALESCE(ret.return_date, r.actual_return_date) AS return_date, "
                 + "GREATEST(DATEDIFF(CURRENT_DATE, DATE(r.due_date)), 0) AS overdue_days, "
                 + "CASE WHEN r.returned_quantity >= r.rental_quantity THEN r.fine_amount "
                 + "ELSE GREATEST(DATEDIFF(CURRENT_DATE, DATE(r.due_date)), 0) * " + RentalDAO.FINE_PER_DAY.toPlainString() + " END AS current_fine, "
                 + "ret.returned_quantity AS event_returned_quantity "
                 + "FROM rental_notifications n JOIN rentals r ON n.rental_id = r.rental_id "
-                + "JOIN users u ON r.user_id = u.user_id JOIN books b ON r.book_id = b.book_id "
+                + "JOIN books b ON r.book_id = b.book_id "
                 + "LEFT JOIN returns ret ON n.return_id = ret.return_id WHERE n.notification_id = ?";
         String type;
         String name;
@@ -165,8 +165,8 @@ public final class RentalNotificationService {
                     throw new SQLException("Rental notification details not found.");
                 }
                 type = rs.getString("notification_type");
-                name = rs.getString("full_name");
-                email = rs.getString("email");
+                name = rs.getString("renter_name");
+                email = rs.getString("renter_email");
                 title = rs.getString("title");
                 rentalDate = rs.getTimestamp("rental_date");
                 dueDate = rs.getTimestamp("due_date");

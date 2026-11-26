@@ -14,7 +14,6 @@
             <div class="stat-box"><h3>Total Books</h3><h2>${stats.totalBooks}</h2></div>
             <div class="stat-box"><h3>Available Books</h3><h2>${stats.availableBooks}</h2></div>
             <div class="stat-box"><h3>Currently Rented Books</h3><h2>${stats.rentedBooks}</h2></div>
-            <div class="stat-box"><h3>Total Members</h3><h2>${stats.totalMembers}</h2></div>
             <div class="stat-box"><h3>Active Rentals</h3><h2>${stats.activeRentals}</h2></div>
             <div class="stat-box"><h3>Overdue Rentals</h3><h2>${stats.overdueRentals}</h2></div>
             <div class="stat-box"><h3>Total Returned Books</h3><h2>${stats.returnedBooks}</h2></div>
@@ -22,8 +21,9 @@
         </div>
         <div class="card">
             <a href="${pageContext.request.contextPath}/jsp/admin/books/form.jsp" class="btn primary">Add Book</a>
+            <a href="${pageContext.request.contextPath}/rentals/new.do" class="btn secondary">Record a Rental</a>
             <a href="${pageContext.request.contextPath}/books/list.do" class="btn secondary">Book Inventory</a>
-            <a href="${pageContext.request.contextPath}/rentals/list.do" class="btn secondary">All Rentals</a>
+            <a href="${pageContext.request.contextPath}/rentals/list.do" class="btn secondary">Rental History</a>
             <a href="${pageContext.request.contextPath}/rentals/overdue.do" class="btn secondary">Overdue Rentals</a>
         </div>
         <div class="card">
@@ -31,7 +31,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>User</th>
+                        <th>Renter</th>
                         <th>Email</th>
                         <th>Book</th>
                         <th>Rental Date</th>
@@ -44,8 +44,8 @@
                 <tbody>
                     <c:forEach var="rental" items="${overdueRentals}">
                         <tr>
-                            <td>${rental.userName}</td>
-                            <td>${rental.userEmail}</td>
+                            <td>${rental.renterName}</td>
+                            <td>${rental.renterEmail}</td>
                             <td>${rental.bookTitle}</td>
                             <td>${rental.rentalDate}</td>
                             <td>${rental.dueDate}</td>

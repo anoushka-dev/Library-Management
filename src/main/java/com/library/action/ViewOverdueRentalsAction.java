@@ -18,7 +18,7 @@ public class ViewOverdueRentalsAction extends AbstractAction {
             return mapping.findForward("login");
         }
         if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
-            return mapping.findForward("notAdmin");
+            return mapping.findForward("login");
         }
         RentalDAO rentalDAO = new RentalDAO();
         List<Rental> rentals = rentalDAO.listOverdueRentals();

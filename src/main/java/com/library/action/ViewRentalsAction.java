@@ -18,12 +18,10 @@ public class ViewRentalsAction extends AbstractAction {
             return mapping.findForward("login");
         }
         RentalDAO rentalDAO = new RentalDAO();
-        List<Rental> rentals;
-        if ("ADMIN".equalsIgnoreCase(currentUser.getRole())) {
-            rentals = rentalDAO.listAllRentals();
-        } else {
-            rentals = rentalDAO.listRentalsByUser(currentUser.getUserId());
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            return mapping.findForward("login");
         }
+        List<Rental> rentals = rentalDAO.listAllRentals();
         request.setAttribute("rentals", rentals);
         return mapping.findForward("success");
     }

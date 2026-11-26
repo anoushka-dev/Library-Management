@@ -1,8 +1,11 @@
 package com.library.action;
 
 import com.library.dao.RentalDAO;
+import com.library.dao.BookDAO;
 import com.library.form.RentalForm;
 import com.library.model.User;
+import org.apache.struts.Globals;
+import org.apache.struts.action.ActionErrors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.struts.action.ActionForm;
@@ -16,9 +19,20 @@ public class RentBookAction extends AbstractAction {
         if (currentUser == null) {
             return mapping.findForward("login");
         }
+        if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
+            return mapping.findForward("login");
+        }
         RentalForm rentalForm = (RentalForm) form;
+        ActionErrors errors = rentalForm.validate(mapping, request);
+        if (!errors.isEmpty()) {
+            request.setAttribute(Globals.ERROR_KEY, errors);
+            request.setAttribute("availableBooks", new BookDAO().listAvailableBooks());
+            return mapping.findForward("failure");
+        }
         RentalDAO rentalDAO = new RentalDAO();
-        rentalDAO.createRental(currentUser.getUserId(), rentalForm.getBookId(), rentalForm.getQuantity(), rentalForm.getRentalDays());
+        rentalDAO.createRental(rentalForm.getRenterName(), rentalForm.getRenterEmail(),
+                rentalForm.getRenterPhone(), rentalForm.getRenterAddress(),
+                rentalForm.getBookId(), rentalForm.getQuantity(), rentalForm.getRentalDays());
         request.setAttribute("successMessage", "Rental created successfully");
         return mapping.findForward("success");
     }

@@ -23,7 +23,7 @@
                 <html:password property="password" />
                 <html:submit styleClass="btn primary">Login</html:submit>
             </html:form>
-            <p>New user? <a href="${pageContext.request.contextPath}/jsp/auth/register.jsp">Register here</a></p>
+            <p>Administrator sign-in</p>
         </div>
     </div>
 </body>

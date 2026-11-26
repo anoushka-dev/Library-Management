@@ -18,9 +18,11 @@ public class RentalDAO {
     public static final int DEFAULT_RENTAL_DAYS = 14;
     public static final BigDecimal FINE_PER_DAY = new BigDecimal("10.00");
 
-    public int createRental(int userId, int bookId, int quantity, int rentalDays) throws SQLException {
-        if (userId <= 0 || bookId <= 0 || quantity <= 0) {
-            throw new SQLException("User, book, and rental quantity must be valid.");
+    public int createRental(String renterName, String renterEmail, String renterPhone,
+                            String renterAddress, int bookId, int quantity, int rentalDays) throws SQLException {
+        if (renterName == null || renterName.trim().isEmpty()
+                || renterEmail == null || renterEmail.trim().isEmpty() || bookId <= 0 || quantity <= 0) {
+            throw new SQLException("Renter name, email, book, and rental quantity must be valid.");
         }
         int duration = rentalDays > 0 ? rentalDays : DEFAULT_RENTAL_DAYS;
         try (Connection conn = DatabaseUtil.getConnection()) {
@@ -53,14 +55,17 @@ public class RentalDAO {
                 cal.add(Calendar.DAY_OF_YEAR, duration);
                 Timestamp dueDate = new Timestamp(cal.getTimeInMillis());
 
-                String insertRentalSql = "INSERT INTO rentals (user_id, book_id, rental_quantity, returned_quantity, rental_date, due_date, status) VALUES (?, ?, ?, 0, ?, ?, 'ACTIVE')";
+                String insertRentalSql = "INSERT INTO rentals (renter_name, renter_email, renter_phone, renter_address, book_id, rental_quantity, returned_quantity, rental_date, due_date, status) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, 'ACTIVE')";
                 int rentalId;
                 try (PreparedStatement insert = conn.prepareStatement(insertRentalSql, Statement.RETURN_GENERATED_KEYS)) {
-                    insert.setInt(1, userId);
-                    insert.setInt(2, bookId);
-                    insert.setInt(3, quantity);
-                    insert.setTimestamp(4, rentalDate);
-                    insert.setTimestamp(5, dueDate);
+                    insert.setString(1, renterName.trim());
+                    insert.setString(2, renterEmail.trim());
+                    insert.setString(3, blankToNull(renterPhone));
+                    insert.setString(4, blankToNull(renterAddress));
+                    insert.setInt(5, bookId);
+                    insert.setInt(6, quantity);
+                    insert.setTimestamp(7, rentalDate);
+                    insert.setTimestamp(8, dueDate);
                     insert.executeUpdate();
                     try (ResultSet keys = insert.getGeneratedKeys()) {
                         if (!keys.next()) {
@@ -82,22 +87,6 @@ public class RentalDAO {
         }
     }
 
-    public List<Rental> listRentalsByUser(int userId) throws SQLException {
-        refreshOverdueStatuses();
-        String sql = rentalSelect() + " WHERE r.user_id = ? ORDER BY r.rental_date DESC";
-        List<Rental> rentals = new ArrayList<>();
-        try (Connection conn = DatabaseUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    rentals.add(mapRow(rs));
-                }
-            }
-        }
-        return rentals;
-    }
-
     public List<Rental> listAllRentals() throws SQLException {
         refreshOverdueStatuses();
         String sql = rentalSelect() + " ORDER BY r.rental_date DESC";
@@ -107,22 +96,6 @@ public class RentalDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 rentals.add(mapRow(rs));
-            }
-        }
-        return rentals;
-    }
-
-    public List<Rental> listActiveRentalsByUser(int userId) throws SQLException {
-        refreshOverdueStatuses();
-        String sql = rentalSelect() + " WHERE r.user_id = ? AND r.returned_quantity < r.rental_quantity ORDER BY r.due_date ASC";
-        List<Rental> rentals = new ArrayList<>();
-        try (Connection conn = DatabaseUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    rentals.add(mapRow(rs));
-                }
             }
         }
         return rentals;
@@ -147,18 +120,9 @@ public class RentalDAO {
         return count("SELECT COUNT(*) FROM rentals WHERE returned_quantity < rental_quantity");
     }
 
-    public int countActiveRentalsByUser(int userId) throws SQLException {
-        return countForUser("SELECT COUNT(*) FROM rentals WHERE user_id = ? AND returned_quantity < rental_quantity", userId);
-    }
-
     public int countOverdueRentals() throws SQLException {
         refreshOverdueStatuses();
         return count("SELECT COUNT(*) FROM rentals WHERE status = 'OVERDUE' AND returned_quantity < rental_quantity");
-    }
-
-    public int countOverdueRentalsByUser(int userId) throws SQLException {
-        refreshOverdueStatuses();
-        return countForUser("SELECT COUNT(*) FROM rentals WHERE user_id = ? AND status = 'OVERDUE' AND returned_quantity < rental_quantity", userId);
     }
 
     public int countReturnedBooks() throws SQLException {
@@ -166,11 +130,7 @@ public class RentalDAO {
     }
 
     public BigDecimal totalOutstandingFines() throws SQLException {
-        return outstandingFines(null);
-    }
-
-    public BigDecimal outstandingFinesByUser(int userId) throws SQLException {
-        return outstandingFines(userId);
+        return outstandingFines();
     }
 
     public Rental findById(int rentalId) throws SQLException {
@@ -184,14 +144,13 @@ public class RentalDAO {
         }
     }
 
-    public void processReturn(int rentalId, int userId, int quantity) throws SQLException {
+    public void processReturn(int rentalId, int quantity) throws SQLException {
         try (Connection conn = DatabaseUtil.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                String rentalSql = "SELECT *, DATE(due_date) < CURRENT_DATE AS is_overdue FROM rentals WHERE rental_id = ? AND user_id = ? FOR UPDATE";
+                String rentalSql = "SELECT *, DATE(due_date) < CURRENT_DATE AS is_overdue FROM rentals WHERE rental_id = ? FOR UPDATE";
                 try (PreparedStatement rentalStmt = conn.prepareStatement(rentalSql)) {
                     rentalStmt.setInt(1, rentalId);
-                    rentalStmt.setInt(2, userId);
                     try (ResultSet rs = rentalStmt.executeQuery()) {
                         if (!rs.next()) {
                             throw new SQLException("Rental not found.");
@@ -235,7 +194,7 @@ public class RentalDAO {
                         try (PreparedStatement insertReturn = conn.prepareStatement(insertReturnSql, Statement.RETURN_GENERATED_KEYS)) {
                             insertReturn.setInt(1, rentalId);
                             insertReturn.setInt(2, quantity);
-                            insertReturn.setString(3, "Returned by member.");
+                            insertReturn.setString(3, "Returned by admin.");
                             insertReturn.executeUpdate();
                             try (ResultSet keys = insertReturn.getGeneratedKeys()) {
                                 if (!keys.next()) {
@@ -266,16 +225,12 @@ public class RentalDAO {
         }
     }
 
-    private BigDecimal outstandingFines(Integer userId) throws SQLException {
+    private BigDecimal outstandingFines() throws SQLException {
         refreshOverdueStatuses();
         String sql = "SELECT COALESCE(SUM(CASE WHEN returned_quantity >= rental_quantity THEN fine_amount ELSE GREATEST(DATEDIFF(CURRENT_DATE, DATE(due_date)), 0) * "
-                + FINE_PER_DAY.toPlainString() + " END), 0) FROM rentals"
-                + (userId == null ? "" : " WHERE user_id = ?");
+                + FINE_PER_DAY.toPlainString() + " END), 0) FROM rentals";
         try (Connection conn = DatabaseUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            if (userId != null) {
-                ps.setInt(1, userId);
-            }
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getBigDecimal(1) : BigDecimal.ZERO;
             }
@@ -290,29 +245,18 @@ public class RentalDAO {
         }
     }
 
-    private int countForUser(String sql, int userId) throws SQLException {
-        try (Connection conn = DatabaseUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
-            }
-        }
-    }
-
     private String rentalSelect() {
-        return "SELECT r.*, u.full_name, u.email AS user_email, b.title, b.isbn, "
+        return "SELECT r.*, b.title, b.isbn, "
                 + "GREATEST(DATEDIFF(DATE(r.due_date), CURRENT_DATE), 0) AS days_remaining, "
                 + "GREATEST(DATEDIFF(CURRENT_DATE, DATE(r.due_date)), 0) AS overdue_days, "
                 + "CASE WHEN r.returned_quantity >= r.rental_quantity THEN r.fine_amount "
                 + "ELSE GREATEST(DATEDIFF(CURRENT_DATE, DATE(r.due_date)), 0) * " + FINE_PER_DAY.toPlainString() + " END AS current_fine "
-                + "FROM rentals r JOIN users u ON r.user_id = u.user_id JOIN books b ON r.book_id = b.book_id";
+                + "FROM rentals r JOIN books b ON r.book_id = b.book_id";
     }
 
     private Rental mapRow(ResultSet rs) throws SQLException {
         Rental rental = new Rental();
         rental.setRentalId(rs.getInt("rental_id"));
-        rental.setUserId(rs.getInt("user_id"));
         rental.setBookId(rs.getInt("book_id"));
         rental.setRentalQuantity(rs.getInt("rental_quantity"));
         rental.setReturnedQuantity(rs.getInt("returned_quantity"));
@@ -322,8 +266,10 @@ public class RentalDAO {
         rental.setStatus(rs.getString("status"));
         rental.setCreatedAt(rs.getTimestamp("created_at"));
         rental.setUpdatedAt(rs.getTimestamp("updated_at"));
-        rental.setUserName(rs.getString("full_name"));
-        rental.setUserEmail(rs.getString("user_email"));
+        rental.setRenterName(rs.getString("renter_name"));
+        rental.setRenterEmail(rs.getString("renter_email"));
+        rental.setRenterPhone(rs.getString("renter_phone"));
+        rental.setRenterAddress(rs.getString("renter_address"));
         rental.setBookTitle(rs.getString("title"));
         rental.setIsbn(rs.getString("isbn"));
         rental.setDaysRemaining(rs.getInt("days_remaining"));
@@ -331,5 +277,9 @@ public class RentalDAO {
         rental.setCurrentFine(rs.getBigDecimal("current_fine"));
         rental.setFineAmount(rs.getBigDecimal("fine_amount"));
         return rental;
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.trim().isEmpty() ? null : value.trim();
     }
 }

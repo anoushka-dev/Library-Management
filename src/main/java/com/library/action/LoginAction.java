@@ -16,16 +16,13 @@ public class LoginAction extends AbstractAction {
         LoginForm loginForm = (LoginForm) form;
         UserDAO userDAO = new UserDAO();
         User user = userDAO.login(loginForm.getEmail(), loginForm.getPassword());
-        if (user == null) {
+        if (user == null || !"ADMIN".equalsIgnoreCase(user.getRole())) {
             request.setAttribute("errorMessage", "Invalid email or password");
             return mapping.findForward("failure");
         }
 
         HttpSession session = request.getSession();
         session.setAttribute("currentUser", user);
-        if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-            return mapping.findForward("admin");
-        }
-        return mapping.findForward("success");
+        return mapping.findForward("admin");
     }
 }

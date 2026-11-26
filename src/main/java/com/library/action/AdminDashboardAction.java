@@ -2,7 +2,6 @@ package com.library.action;
 
 import com.library.dao.BookDAO;
 import com.library.dao.RentalDAO;
-import com.library.dao.UserDAO;
 import com.library.model.DashboardStats;
 import com.library.model.User;
 import javax.servlet.http.HttpServletRequest;
@@ -19,16 +18,14 @@ public class AdminDashboardAction extends AbstractAction {
             return mapping.findForward("login");
         }
         if (!"ADMIN".equalsIgnoreCase(currentUser.getRole())) {
-            return mapping.findForward("notAdmin");
+            return mapping.findForward("login");
         }
         BookDAO bookDAO = new BookDAO();
-        UserDAO userDAO = new UserDAO();
         RentalDAO rentalDAO = new RentalDAO();
         DashboardStats stats = new DashboardStats();
         stats.setTotalBooks(bookDAO.countBooks());
         stats.setAvailableBooks(bookDAO.countAvailableBooks());
         stats.setRentedBooks(bookDAO.countRentedBooks());
-        stats.setTotalMembers(userDAO.countMembers());
         stats.setActiveRentals(rentalDAO.countActiveRentals());
         stats.setOverdueRentals(rentalDAO.countOverdueRentals());
         stats.setReturnedBooks(rentalDAO.countReturnedBooks());

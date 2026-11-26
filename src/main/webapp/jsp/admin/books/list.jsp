@@ -12,7 +12,12 @@
         <h2>Book Inventory</h2>
         <div class="card">
             <a href="${pageContext.request.contextPath}/jsp/admin/books/form.jsp" class="btn primary">Add New Book</a>
+            <a href="${pageContext.request.contextPath}/rentals/new.do" class="btn secondary">Record a Rental</a>
         </div>
+        <form action="${pageContext.request.contextPath}/books/search.do" method="get">
+            <input type="text" name="searchText" placeholder="Search by title, author, category or ISBN" />
+            <button type="submit" class="btn primary">Search</button>
+        </form>
         <table>
             <thead>
                 <tr>
@@ -35,6 +40,9 @@
                         <td>${book.availableQuantity}</td>
                         <td>${book.rentedQuantity}</td>
                         <td>
+                            <c:if test="${book.availableQuantity > 0}">
+                                <a href="${pageContext.request.contextPath}/rentals/new.do?bookId=${book.bookId}" class="btn primary">Rent</a>
+                            </c:if>
                             <a href="${pageContext.request.contextPath}/books/delete.do?bookId=${book.bookId}" class="btn danger">Delete</a>
                         </td>
                     </tr>

@@ -11,7 +11,6 @@
         <p>Manage books, inventory, rentals, returns and overdue tracking.</p>
         <div class="actions">
             <a href="${pageContext.request.contextPath}/jsp/auth/login.jsp" class="btn primary">Login</a>
-            <a href="${pageContext.request.contextPath}/jsp/auth/register.jsp" class="btn secondary">Register</a>
         </div>
     </div>
 </body>
